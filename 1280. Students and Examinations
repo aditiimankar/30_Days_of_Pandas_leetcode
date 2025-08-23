@@ -103,3 +103,24 @@ on s.student_id = e.student_id
    and sub.subject_name = e.subject_name
 group by e.subject_name, s.student_id, sub.subject_name
 order by s.student_id, sub.subject_name
+
+
+PYTHON: import pandas as pd
+
+def students_and_examinations(students: pd.DataFrame, subjects: pd.DataFrame, examinations: pd.DataFrame) -> pd.DataFrame:
+    # 1) All student–subject pairs (cartesian product)
+    all_pairs = students.merge(subjects, how='cross')
+
+    # 2) Count how many times each student took each subject
+    counts = (
+        examinations.groupby(['student_id', 'subject_name']).size().reset_index(name='attended_exams')
+    )
+
+    # 3) Left-join counts onto all pairs, fill missing with 0, and sort
+    out = (
+        all_pairs.merge(counts, on=['student_id', 'subject_name'], how='left')
+        .fillna({'attended_exams': 0})
+        .astype({'attended_exams': 'int64'})
+        .sort_values(['student_id', 'subject_name'])[['student_id', 'student_name', 'subject_name', 'attended_exams']]
+    )
+    return out
